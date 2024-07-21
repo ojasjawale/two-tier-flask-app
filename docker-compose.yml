@@ -1,0 +1,45 @@
+version: '3.9'
+services:
+  mysql:
+    container_name: mysql
+    image: 'mysql:5.7'
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: devops
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    volumes:
+      - 'mysql-data:/var/lib/mysql'
+    networks:
+      - twotier
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  flask-app:
+    build:
+      context: .
+    ports:
+      - '5001:5000'
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_DB: devops
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - twotier
+
+volumes:
+  mysql-data:
+
+networks:
+  twotier:
+    driver: bridge
